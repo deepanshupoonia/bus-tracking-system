@@ -1,0 +1,3 @@
+import jwt from 'jsonwebtoken'; import { env } from '../config/env.js'; import { HttpError } from '../utils/http-error.js';
+export function authenticate(request,_response,next) { try { const token=request.headers.authorization?.replace(/^Bearer\s+/i,''); if(!token) throw new HttpError(401,'Authentication is required.'); request.user=jwt.verify(token,env.jwtSecret); next(); } catch { next(new HttpError(401,'Invalid or expired token.')); } }
+export function authorize(...roles) { return (request,_response,next)=>roles.includes(request.user.role)?next():next(new HttpError(403,'You do not have access to this resource.')); }

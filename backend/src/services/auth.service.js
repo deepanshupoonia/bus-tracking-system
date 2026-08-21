@@ -1,0 +1,6 @@
+import bcrypt from 'bcryptjs'; import jwt from 'jsonwebtoken'; import { pool } from '../config/database.js'; import { env } from '../config/env.js'; import { HttpError } from '../utils/http-error.js';
+const fields='id,name,email,role,created_at';
+export async function registerStudent({name,email,password}) { const address=email.toLowerCase(); if ((await pool.query('SELECT id FROM users WHERE email=$1',[address])).rowCount) throw new HttpError(409,'An account with that email already exists.'); return (await pool.query(`INSERT INTO users(name,email,password_hash,role) VALUES($1,$2,$3,'STUDENT') RETURNING ${fields}`,[name,address,await bcrypt.hash(password,12)])).rows[0]; }
+export async function login({email,password}) { const user=(await pool.query('SELECT * FROM users WHERE email=$1',[email.toLowerCase()])).rows[0]; if (!user || !(await bcrypt.compare(password,user.password_hash))) throw new HttpError(401,'Invalid email or password.'); return {token:jwt.sign({sub:user.id,role:user.role},env.jwtSecret,{expiresIn:'8h'}),user:pick(user)}; }
+export async function getUser(id) { return (await pool.query(`SELECT ${fields} FROM users WHERE id=$1`,[id])).rows[0]; }
+function pick(user) { return {id:user.id,name:user.name,email:user.email,role:user.role}; }

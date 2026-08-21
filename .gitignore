@@ -1,0 +1,36 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+.vite/
+
+# Secrets and local environment overrides
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs and runtime files
+*.log
+logs/
+*.pid
+*.pid.lock
+
+# Local database / cache data (if Docker is added later)
+postgres-data/
+redis-data/
+*.sqlite
+*.sqlite3
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Package manager / test tooling caches
+.npm/
+.eslintcache
+.cache/

@@ -1,0 +1,4 @@
+import { createContext,useContext,useEffect,useState } from 'react'; import { api,setToken } from '../services/api.js';
+const AuthContext=createContext(null);
+export function AuthProvider({children}) { const [session,setSession]=useState(null); const [ready,setReady]=useState(false); useEffect(()=>{const token=localStorage.getItem('bus_token'); if(!token){setReady(true);return;} setToken(token); api.get('/auth/me').then(({data})=>setSession({token,user:data.data.user})).catch(()=>localStorage.removeItem('bus_token')).finally(()=>setReady(true));},[]); const login=async(values)=>{const {data}=await api.post('/auth/login',values); setToken(data.data.token);localStorage.setItem('bus_token',data.data.token);setSession(data.data);}; const logout=()=>{setToken();localStorage.removeItem('bus_token');setSession(null);}; return <AuthContext.Provider value={{session,ready,login,logout}}>{children}</AuthContext.Provider>; }
+export const useAuth=()=>useContext(AuthContext);
