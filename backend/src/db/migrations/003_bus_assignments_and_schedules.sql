@@ -1,0 +1,8 @@
+INSERT INTO buses(bus_number,registration_number,capacity,route_id,status)
+SELECT 'BUS-14','PB-01-IR-1400',40,id,'INACTIVE' FROM routes WHERE name='IIT Ropar Campus Loop'
+ON CONFLICT(bus_number) DO NOTHING;
+CREATE TABLE IF NOT EXISTS bus_schedules (id BIGSERIAL PRIMARY KEY,bus_id BIGINT NOT NULL REFERENCES buses(id) ON DELETE CASCADE,schedule_name VARCHAR(120) NOT NULL,days_of_week VARCHAR(40) NOT NULL DEFAULT 'MON,TUE,WED,THU,FRI',departure_time TIME NOT NULL,is_active BOOLEAN NOT NULL DEFAULT TRUE);
+CREATE TABLE IF NOT EXISTS schedule_stop_times (schedule_id BIGINT NOT NULL REFERENCES bus_schedules(id) ON DELETE CASCADE,stop_id BIGINT NOT NULL REFERENCES stops(id) ON DELETE CASCADE,stop_order INTEGER NOT NULL,expected_arrival_time TIME NOT NULL,PRIMARY KEY(schedule_id,stop_id),UNIQUE(schedule_id,stop_order));
+CREATE INDEX IF NOT EXISTS idx_bus_schedules_bus ON bus_schedules(bus_id,is_active);
+INSERT INTO bus_schedules(bus_id,schedule_name,departure_time) SELECT b.id,'Morning campus loop','08:00' FROM buses b WHERE b.bus_number='BUS-12' AND NOT EXISTS (SELECT 1 FROM bus_schedules s WHERE s.bus_id=b.id AND s.schedule_name='Morning campus loop');
+INSERT INTO schedule_stop_times(schedule_id,stop_id,stop_order,expected_arrival_time) SELECT sch.id,rs.stop_id,rs.stop_order,(TIME '08:00' + ((rs.stop_order - 1) * INTERVAL '8 minutes'))::time FROM bus_schedules sch JOIN buses b ON b.id=sch.bus_id JOIN routes r ON r.id=b.route_id JOIN route_stops rs ON rs.route_id=r.id WHERE b.bus_number='BUS-12' AND sch.schedule_name='Morning campus loop' ON CONFLICT(schedule_id,stop_id) DO NOTHING;

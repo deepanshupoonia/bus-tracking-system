@@ -1,24 +1,2 @@
-import { useEffect, useState } from 'react';
-import { LiveMap } from '../components/LiveMap.jsx';
-import { api } from '../services/api.js';
-import { createSocket } from '../services/socket.js';
-
-const name = (stop) => stop?.name ?? '—';
-
-export function StudentDashboard() {
-  const [buses, setBuses] = useState([]);
-  const [error, setError] = useState('');
-  useEffect(() => {
-    const socket = createSocket();
-    const load = () => api.get('/tracking/buses').then((response) => {
-      setBuses(response.data.data.buses);
-      response.data.data.buses.forEach((bus) => socket.emit('bus:join', bus.id));
-    }).catch((requestError) => setError(requestError.response?.data?.message ?? 'Unable to load buses'));
-    socket.on('bus:location', load);
-    load();
-    const refreshId = setInterval(load, 10000);
-    return () => { clearInterval(refreshId); socket.disconnect(); };
-  }, []);
-  const primary = buses[0];
-  return <section className="workspace"><div className="intro"><div><p className="eyebrow">IIT Ropar transport</p><h1>Your campus ride, in real time.</h1><p>Follow the next bus around Rupnagar without refreshing the page.</p></div><div className="time-card"><span>Tracking refresh</span><strong>5 seconds</strong><small>Live when driver GPS is active</small></div></div>{error && <p className="error">{error}</p>}<div className="tracking-grid"><LiveMap bus={primary} /><aside className="arrival-card"><p className="section-label">Next arrival</p><h2>{primary?.nextStop?.name ?? 'Select a live bus'}</h2><p>{primary?.route_name ?? 'No route available'}</p><div className="arrival-time">{primary?.location ? 'Live GPS connected' : 'Waiting for driver'}<span>{primary?.status ?? 'INACTIVE'}</span></div></aside></div><div className="section-title"><div><p className="section-label">Available buses</p><h2>Campus fleet</h2></div><span>{buses.length} vehicle{buses.length === 1 ? '' : 's'}</span></div><div className="cards">{buses.map((bus) => <article className="card bus-card" key={bus.id}><div className="row"><div><p className="bus-label">Campus shuttle</p><h2>{bus.bus_number}</h2></div><span className={`badge ${bus.status.toLowerCase()}`}>{bus.status}</span></div><p className="route">{bus.route_name ?? 'No route assigned'}</p><div className="stops"><div><span>Now near</span><strong>{name(bus.currentStop)}</strong></div><div><span>Next stop</span><strong>{name(bus.nextStop)}</strong></div></div><p className="coordinates">{bus.location ? `GPS ${Number(bus.location.latitude).toFixed(5)}, ${Number(bus.location.longitude).toFixed(5)}` : 'No location received yet'}</p></article>)}</div></section>;
-}
+import { useEffect,useState } from 'react';import { LiveMap } from '../components/LiveMap.jsx';import { api } from '../services/api.js';import { createSocket } from '../services/socket.js';
+export function StudentDashboard(){const [buses,setBuses]=useState([]),[selected,setSelected]=useState(''),[schedule,setSchedule]=useState(null),[error,setError]=useState('');useEffect(()=>{const socket=createSocket();const load=()=>api.get('/tracking/buses').then(r=>{setBuses(r.data.data.buses);setSelected(current=>current||String(r.data.data.buses[0]?.id||''));r.data.data.buses.forEach(b=>socket.emit('bus:join',b.id));}).catch(e=>setError(e.response?.data?.message??'Unable to load buses'));socket.on('bus:location',load);load();const timer=setInterval(load,10000);return()=>{clearInterval(timer);socket.disconnect()}},[]);useEffect(()=>{if(selected)api.get(`/tracking/buses/${selected}/schedule`).then(r=>setSchedule(r.data.data.schedule)).catch(()=>setSchedule(null))},[selected]);const bus=buses.find(b=>String(b.id)===selected);return <section className="workspace"><div className="intro"><div><p className="eyebrow">IIT Ropar transport</p><h1>Your campus ride, in real time.</h1><p>Select a bus to show only its live location and timetable.</p></div><label className="bus-picker">Trace bus<select value={selected} onChange={e=>setSelected(e.target.value)}>{buses.map(b=><option key={b.id} value={b.id}>{b.bus_number}</option>)}</select></label></div>{error&&<p className="error">{error}</p>}<div className="tracking-grid"><LiveMap key={`${selected}-${schedule?.id??'none'}`} bus={bus} schedule={schedule}/><aside className="arrival-card"><p className="section-label">Today · {schedule?.serviceDay??'No service'}</p><h2>{schedule?.schedule_name??'No schedule yet'}</h2>{schedule?<><p>Departs {schedule.departure_time?.slice(0,5)} · Next: <b>{schedule.nextStop?.name}</b> at <b>{schedule.nextStop?.expected_arrival_time?.slice(0,5)}</b></p><div className="schedule-list">{schedule.stops.map(stop=><div className={stop.name===schedule.nextStop?.name&&stop.expected_arrival_time===schedule.nextStop?.expected_arrival_time?'active-schedule-stop':''} key={stop.stop_order}><span>{stop.stop_order}. {stop.name}</span><b>{stop.expected_arrival_time.slice(0,5)}</b></div>)}</div></>:<p>The administrator can add a timetable for this bus.</p>}</aside></div></section>}
