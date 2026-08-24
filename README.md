@@ -83,6 +83,22 @@ The driver account owns `BUS-12`. Start its route, grant browser GPS permission,
 
 If Redis is unavailable in Phase 1, the API stays up and health reports Redis as unavailable. It will become required before real-time location tracking is enabled.
 
+## Deployment (Vercel + Render + Neon)
+
+This repository is ready for a Vercel frontend and a Render backend. Secrets stay out of Git; use the environment-variable templates as the source of key names only.
+
+1. In **Render**, deploy the repository using `render.yaml` (or set the service root directory to `backend`). Set `DATABASE_URL` to the **pooled** Neon connection string, keep `JWT_SECRET` set, and set `CORS_ORIGIN` to `https://bus-tracking-system-kohl-six.vercel.app`. Redis is optional for the current phase.
+2. The Render blueprint runs migrations before starting the API. It records applied migration files, so rerunning it is safe (including on Render's free plan).
+3. In **Vercel**, set the project root directory to `frontend`, then add these production environment variables and redeploy:
+
+   ```text
+   VITE_API_URL=https://bus-tracking-system-oqnw.onrender.com/api
+   VITE_SOCKET_URL=https://bus-tracking-system-oqnw.onrender.com
+   ```
+
+   Vite embeds `VITE_*` values at build time, so a redeploy is required after changing them.
+4. Confirm the backend health endpoint at `https://bus-tracking-system-oqnw.onrender.com/api/health`, then log in with the seeded account. If this is a fresh Neon database, the migration runs during the first Render deployment; run `npm run seed --prefix backend` once only if you want the demo accounts/data.
+
 ## Development phases
 
 1. **Foundation** — repository, configs, API/client shell (complete).

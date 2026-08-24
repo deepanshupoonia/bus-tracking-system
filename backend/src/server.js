@@ -8,7 +8,15 @@ import { registerSocketHandlers } from './sockets/index.js';
 
 validateEnvironment();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: env.corsOrigin } });
+const io = new Server(server, {
+  cors: {
+    origin(origin, callback) {
+      if (!origin || env.corsOrigins.includes(origin.replace(/\/$/, ''))) return callback(null, true);
+      return callback(new Error('Origin is not allowed by CORS'));
+    },
+    credentials: true
+  }
+});
 registerSocketHandlers(io);
 
 server.listen(env.port, async () => {
@@ -26,4 +34,3 @@ async function shutdown() {
 
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
-

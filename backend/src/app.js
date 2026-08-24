@@ -11,7 +11,14 @@ import { adminRouter } from './routes/admin.routes.js';
 
 export const app = express();
 app.use(helmet());
-app.use(cors({ origin: env.corsOrigin }));
+app.use(cors({
+  origin(origin, callback) {
+    // Allow non-browser clients such as Render health checks, but restrict browsers.
+    if (!origin || env.corsOrigins.includes(origin.replace(/\/$/, ''))) return callback(null, true);
+    return callback(new Error('Origin is not allowed by CORS'));
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '100kb' }));
 
 app.use('/api/health', healthRouter);

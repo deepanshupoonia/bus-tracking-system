@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: bus-tracking-system-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci
+    # Works on Render's free and paid web-service plans. Migrations are tracked
+    # in schema_migrations, so rerunning this command is safe.
+    startCommand: npm run migrate && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REDIS_URL
+        sync: false
+      - key: CORS_ORIGIN
+        value: https://bus-tracking-system-kohl-six.vercel.app
