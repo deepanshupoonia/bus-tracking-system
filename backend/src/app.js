@@ -1,7 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
-import { env } from './config/env.js';
+import { env, isCorsOriginAllowed } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { healthRouter } from './routes/health.routes.js';
 import { authRouter } from './routes/auth.routes.js';
@@ -15,7 +15,7 @@ app.use(helmet());
 app.use(cors({
   origin(origin, callback) {
     // Allow non-browser clients such as Render health checks, but restrict browsers.
-    if (!origin || env.corsOrigins.includes(origin.replace(/\/$/, ''))) return callback(null, true);
+    if (!origin || isCorsOriginAllowed(origin)) return callback(null, true);
     return callback(new Error('Origin is not allowed by CORS'));
   },
   credentials: true

@@ -95,7 +95,7 @@ If Redis is unavailable in Phase 1, the API stays up and health reports Redis as
 
 This repository is ready for a Vercel frontend and a Render backend. Secrets stay out of Git; use the environment-variable templates as the source of key names only.
 
-1. In **Render**, deploy the repository using `render.yaml` (or set the service root directory to `backend`). Set `DATABASE_URL` to the **pooled** Neon connection string, keep `JWT_SECRET` set, and set `CORS_ORIGIN` to `https://bus-tracking-system-kohl-six.vercel.app`. Redis is optional for the current phase.
+1. In **Render**, deploy the repository using `render.yaml` (or set the service root directory to `backend`). Set `DATABASE_URL` to the **pooled** Neon connection string and keep `JWT_SECRET` set. Set `CORS_ORIGIN` to your stable Vercel production URL. `CORS_ORIGIN_PATTERN` is preconfigured for this project's Vercel preview URLs, so it should not need changing. Redis is optional for the current phase.
 2. The Render blueprint runs migrations before starting the API. It records applied migration files, so rerunning it is safe (including on Render's free plan).
 3. In **Vercel**, set the project root directory to `frontend`, then add these production environment variables and redeploy:
 
