@@ -6,6 +6,18 @@ import { busDetails, busSchedule } from './tracking.service.js';
 export async function listUsers() {
   return (await pool.query(`SELECT u.id,u.name,u.email,u.role,u.created_at,d.license_number,d.phone FROM users u LEFT JOIN drivers d ON d.user_id=u.id ORDER BY u.created_at DESC`)).rows;
 }
+export async function updateUser(id,{name,email,licenseNumber,phone}) {
+  const client=await pool.connect();
+  try { await client.query('BEGIN'); const user=(await client.query(`UPDATE users SET name=$1,email=$2 WHERE id=$3 RETURNING id,name,email,role,created_at`,[name,email.toLowerCase(),id])).rows[0]; if(!user) throw new HttpError(404,'User not found.'); if(user.role==='DRIVER') await client.query(`UPDATE drivers SET license_number=COALESCE($1,license_number),phone=$2 WHERE user_id=$3`,[licenseNumber||null,phone||null,id]); await client.query('COMMIT'); return user; }
+  catch(error) { await client.query('ROLLBACK').catch(()=>{}); if(error.code==='23505') throw new HttpError(409,'That email address is already in use.'); throw error; }
+  finally { client.release(); }
+}
+export async function removeUser(id,actingUserId) {
+  if(Number(id)===Number(actingUserId)) throw new HttpError(400,'For safety, an administrator cannot delete their own signed-in account.');
+  const target=(await pool.query('SELECT role FROM users WHERE id=$1',[id])).rows[0]; if(!target) throw new HttpError(404,'User not found.');
+  if(target.role==='ADMIN'&&(await pool.query(`SELECT COUNT(*)::int AS count FROM users WHERE role='ADMIN'`)).rows[0].count<=1) throw new HttpError(400,'The last administrator account cannot be removed.');
+  await pool.query('DELETE FROM users WHERE id=$1',[id]); return {id:Number(id)};
+}
 export async function listBuses() { return (await pool.query(`SELECT b.id,b.bus_number,b.status,r.name route_name,u.name driver_name FROM buses b LEFT JOIN routes r ON r.id=b.route_id LEFT JOIN bus_assignments a ON a.bus_id=b.id LEFT JOIN drivers d ON d.id=a.driver_id LEFT JOIN users u ON u.id=d.user_id ORDER BY b.bus_number`)).rows; }
 export async function listSchedules(busId) {
   const schedules=(await pool.query(`SELECT id,bus_id,schedule_name,days_of_week,departure_time::text,is_active FROM bus_schedules WHERE bus_id=$1 ORDER BY departure_time`,[busId])).rows;

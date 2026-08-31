@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { addSchedule, addUser, editSchedule, getBuses, getBusOperations, getSchedules, getUsers, todayScheduleStatus } from '../controllers/admin.controller.js';
+import { addSchedule, addUser, deleteUser, editSchedule, editUser, getBuses, getBusOperations, getSchedules, getUsers, todayScheduleStatus } from '../controllers/admin.controller.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 export const adminRouter = Router();
 adminRouter.use(authenticate, authorize('ADMIN'));
@@ -8,6 +8,8 @@ adminRouter.get('/buses', getBuses);
 adminRouter.get('/buses/:busId/schedules', getSchedules);
 adminRouter.get('/buses/:busNumber/operations', getBusOperations);
 adminRouter.post('/users', addUser);
+adminRouter.patch('/users/:id', editUser);
+adminRouter.delete('/users/:id', deleteUser);
 adminRouter.post('/schedules', addSchedule);
 adminRouter.put('/schedules/:scheduleId', editSchedule);
 adminRouter.post('/schedules/:scheduleId/today-status', todayScheduleStatus);
