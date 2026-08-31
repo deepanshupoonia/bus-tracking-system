@@ -10,14 +10,15 @@ export async function updateLocation(userId,{latitude,longitude,speedKph}) { con
 export async function busesForStudents() { const buses=(await pool.query(`SELECT b.id,b.bus_number,b.status,r.name route_name,r.id route_id FROM buses b LEFT JOIN routes r ON r.id=b.route_id ORDER BY b.bus_number`)).rows; return Promise.all(buses.map(async(bus)=>{const location=bus.status==='ACTIVE'?await latest(bus.id):null; const stops=await routeStops(bus.route_id); return {...bus,location,...progress(location,stops)};})); }
 export async function busDetails(id) { const bus=(await pool.query(`SELECT b.id,b.bus_number,b.status,r.name route_name,r.id route_id FROM buses b LEFT JOIN routes r ON r.id=b.route_id WHERE b.id=$1`,[id])).rows[0]; if(!bus) throw new HttpError(404,'Bus not found.'); const stops=await routeStops(bus.route_id); const location=await latest(bus.id); return {...bus,location,stops,...progress(location,stops)}; }
 function indiaClock(date) { return new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(date); }
+function indiaDate(date) { const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date); const value=type=>parts.find(part=>part.type===type).value; return `${value('year')}-${value('month')}-${value('day')}`; }
 export async function busSchedule(id) {
   const now=new Date(); const today=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Kolkata',weekday:'short'}).format(now).toUpperCase(); const clock=indiaClock(now);
   const all=(await pool.query(`SELECT id,schedule_name,days_of_week,departure_time::text FROM bus_schedules WHERE bus_id=$1 AND is_active=true ORDER BY departure_time`,[id])).rows;
   if(!all.length)return null;
-  let schedule=all.find(item=>item.days_of_week.includes(today)&&item.departure_time.slice(0,5)>=clock); let daysAhead=0; let serviceDay=today;
-  if(!schedule) for(let offset=1;offset<=7&&!schedule;offset++) { const date=new Date(now.getTime()+offset*86400000); const day=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Kolkata',weekday:'short'}).format(date).toUpperCase(); const candidate=all.find(item=>item.days_of_week.includes(day)); if(candidate) { schedule=candidate; daysAhead=offset; serviceDay=day; } }
+  let schedule; let daysAhead=0; let serviceDay=today; let serviceDate=indiaDate(now);
+  for(let offset=0;offset<=7&&!schedule;offset++) { const date=new Date(now.getTime()+offset*86400000); const day=offset===0?today:new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Kolkata',weekday:'short'}).format(date).toUpperCase(); const candidates=all.filter(item=>item.days_of_week.includes(day)&&(offset>0||item.departure_time.slice(0,5)>=clock)); if(!candidates.length) continue; const cancelled=new Set((await pool.query(`SELECT schedule_id FROM schedule_overrides WHERE service_date=$1 AND status='CANCELLED'`,[indiaDate(date)])).rows.map(row=>String(row.schedule_id))); const candidate=candidates.find(item=>!cancelled.has(String(item.id))); if(candidate) { schedule=candidate; daysAhead=offset; serviceDay=day; serviceDate=indiaDate(date); } }
   if(!schedule)return null;
   const stops=(await pool.query(`SELECT s.name,s.latitude::float,s.longitude::float,sst.stop_order,sst.expected_arrival_time::text FROM schedule_stop_times sst JOIN stops s ON s.id=sst.stop_id WHERE sst.schedule_id=$1 ORDER BY sst.stop_order`,[schedule.id])).rows;
   const nextStop=daysAhead ? stops[0] : stops.find(stop=>stop.expected_arrival_time.slice(0,5)>=clock)??stops[0];
-  return {...schedule,stops,nextStop,serviceDay,isNextServiceDay:daysAhead>0,daysAhead};
+  return {...schedule,stops,nextStop,serviceDay,serviceDate,isNextServiceDay:daysAhead>0,daysAhead};
 }

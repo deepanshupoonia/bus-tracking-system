@@ -1,9 +1,13 @@
 import { Router } from 'express';
-import { addUser, getBuses, getBusOperations, getUsers } from '../controllers/admin.controller.js';
+import { addSchedule, addUser, editSchedule, getBuses, getBusOperations, getSchedules, getUsers, todayScheduleStatus } from '../controllers/admin.controller.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 export const adminRouter = Router();
 adminRouter.use(authenticate, authorize('ADMIN'));
 adminRouter.get('/users', getUsers);
 adminRouter.get('/buses', getBuses);
+adminRouter.get('/buses/:busId/schedules', getSchedules);
 adminRouter.get('/buses/:busNumber/operations', getBusOperations);
 adminRouter.post('/users', addUser);
+adminRouter.post('/schedules', addSchedule);
+adminRouter.put('/schedules/:scheduleId', editSchedule);
+adminRouter.post('/schedules/:scheduleId/today-status', todayScheduleStatus);
