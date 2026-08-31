@@ -74,6 +74,14 @@ Prerequisites: Node.js 20+, PostgreSQL 16+ and Redis 7+.
 
 4. Open `http://localhost:5173`; confirm API health at `http://localhost:4000/api/health`.
 
+Before pushing or redeploying, run this local release check from the repository root:
+
+```powershell
+npm run verify
+```
+
+It runs the backend tests and creates a production frontend build. For an end-to-end check, keep `npm run dev` running, log in as a driver and student in separate browser profiles, start/end a route, and send a service alert.
+
 Demo users seeded by the command above:
 
 - Student: `student@college.test` / `College@123`

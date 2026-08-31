@@ -8,6 +8,7 @@ import { authRouter } from './routes/auth.routes.js';
 import { driverRouter } from './routes/driver.routes.js';
 import { trackingRouter } from './routes/tracking.routes.js';
 import { adminRouter } from './routes/admin.routes.js';
+import { announcementRouter } from './routes/announcement.routes.js';
 
 export const app = express();
 app.use(helmet());
@@ -26,5 +27,6 @@ app.use('/api/auth', authRouter);
 app.use('/api/driver', driverRouter);
 app.use('/api/tracking', trackingRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/announcements', announcementRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
