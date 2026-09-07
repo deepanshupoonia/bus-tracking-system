@@ -15,6 +15,7 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
+      # Set this to the TLS connection URL from Redis Cloud in the Render dashboard.
       - key: REDIS_URL
         sync: false
       - key: CORS_ORIGIN
