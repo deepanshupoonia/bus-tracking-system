@@ -89,7 +89,7 @@ Demo users seeded by the command above:
 
 The driver account owns `BUS-12`. Start its route, grant browser GPS permission, and the student dashboard receives updates through Socket.IO.
 
-Redis Cloud is required for driver GPS updates and current-location reads. Set `REDIS_URL` to the TLS URL supplied by Redis Cloud (usually `rediss://...`) in your local `backend/.env` and Render environment settings; do not commit credentials. PostgreSQL remains unchanged and continues to store durable `location_history` records.
+Redis Cloud is required for driver GPS updates and current-location reads. Set `REDIS_URL` to the exact URL supplied by Redis Cloud in your local `backend/.env` and Render environment settings; do not commit credentials. PostgreSQL remains unchanged and continues to store durable `location_history` records.
 
 Each GPS upload replaces the single Redis value at `bus:{busId}:location`; no prior Redis points are retained. The key intentionally has no expiry: if the driver closes the app or stops transmitting, clients continue to receive just the final known point. Responses label it `LIVE`, `DELAYED`, or `LAST_KNOWN` based on `LOCATION_LIVE_THRESHOLD_SECONDS` and `LOCATION_DELAYED_THRESHOLD_SECONDS`.
 

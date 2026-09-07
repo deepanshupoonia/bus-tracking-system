@@ -13,8 +13,11 @@ export const redis = env.redisUrl
 export async function checkRedis() {
   if (!redis) return false;
   try {
-    if (redis.status === 'wait') redis.connect().catch(() => {});
-    return redis.status === 'ready' && (await redis.ping()) === 'PONG';
+    // With lazyConnect, Redis starts in "wait". Awaiting the connection avoids
+    // reporting a false "unavailable" state while Redis Cloud is still opening
+    // its TLS connection.
+    if (redis.status === 'wait') await redis.connect();
+    return (await redis.ping()) === 'PONG';
   } catch {
     return false;
   }
