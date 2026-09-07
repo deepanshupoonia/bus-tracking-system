@@ -2,7 +2,7 @@ import http from 'node:http';
 import { Server } from 'socket.io';
 import { app } from './app.js';
 import { checkDatabase } from './config/database.js';
-import { checkRedis } from './config/redis.js';
+import { checkRedis, closeRedisConnections, subscribeToLocationUpdates } from './config/redis.js';
 import { env, isCorsOriginAllowed, validateEnvironment } from './config/env.js';
 import { registerSocketHandlers } from './sockets/index.js';
 
@@ -19,6 +19,7 @@ const io = new Server(server, {
 });
 app.set('io', io);
 registerSocketHandlers(io);
+await subscribeToLocationUpdates(io);
 
 server.listen(env.port, async () => {
   const [databaseConnected, redisConnected] = await Promise.all([checkDatabase(), checkRedis()]);
@@ -29,8 +30,10 @@ server.listen(env.port, async () => {
 
 async function shutdown() {
   console.info('Shutting down server');
-  server.close();
-  process.exit(0);
+  server.close(async () => {
+    await closeRedisConnections();
+    process.exit(0);
+  });
 }
 
 process.on('SIGINT', shutdown);

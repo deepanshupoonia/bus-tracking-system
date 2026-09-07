@@ -15,7 +15,6 @@ export function registerSocketHandlers(io) {
       try {
         if (socket.user.role !== 'DRIVER') throw new Error('Drivers only');
         const update=await updateLocation(socket.user.sub,locationSchema.parse(payload));
-        io.to(`bus:${update.busId}`).emit('bus:location',update);
         callback?.({success:true,data:update});
       } catch (error) { callback?.({success:false,message:error.message}); }
     });
